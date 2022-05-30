@@ -34,7 +34,7 @@ func GetDNSAXFR(domain string, server string) {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 1, 2, ' ', 0)
 
-	//fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
+	fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
 
 	for test := range ch {
 		for _,result := range test.RR {
@@ -42,15 +42,15 @@ func GetDNSAXFR(domain string, server string) {
 		}
 	}
 
-	// for env := range ch {
-	// 	if env.Error != nil {
-	// 		err = env.Error
-	// 		break
-	// 	}
-	// 	for _, rr := range env.RR {
-	// 		fmt.Fprintf(w, "%T\t%[1]s\n", rr)
-	// 	}
-	// }
+	for env := range ch {
+		if env.Error != nil {
+			err = env.Error
+			break
+		}
+		for _, rr := range env.RR {
+			fmt.Fprintf(w, "%T\t%[1]s\n", rr)
+		}
+	}
 
 	w.Flush()
 
@@ -87,7 +87,7 @@ func main() {
 			panic(err)
 		}
 		for _, ip := range ips {
-			contextLogger.Info("Trying to solve %s in %s",*domain,ip)
+			contextLogger.Info("Trying to solve %s in %s",*domain,*domain,ip)
 			GetDNSAXFR(*domain, ip.String())
 		}
 	}
