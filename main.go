@@ -8,7 +8,8 @@ import (
 	"text/tabwriter"
 	"github.com/akamensky/argparse"
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
+	"encoding/json"
+	//"github.com/sirupsen/logrus"
 )
 
 func GetDNSServers(domain string) []string {
@@ -19,6 +20,21 @@ func GetDNSServers(domain string) []string {
 	}
 	return nameservers
 }
+
+func GetDNSIps(nameservers [] string) []string {
+	var ips []string
+	for _, server := range nameservers {
+		ip, err := net.LookupIP(server)
+		if err != nil {
+			log.Println("Error...")
+		} 
+		for _,value := range ip {
+			ips = append(ips, value.String())
+		}
+	}
+	return ips
+}
+
 
 func GetDNSAXFR(domain string, server string) {
 	t := new(dns.Transfer)
@@ -34,27 +50,21 @@ func GetDNSAXFR(domain string, server string) {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 1, 2, ' ', 0)
 
-	fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
-
-	for test := range ch {
-		for _,result := range test.RR {
-			fmt.Fprintf(w, "%T\t%[1]s\n", result)
-		}
-	}
-
 	for env := range ch {
-		if env.Error != nil {
-			err = env.Error
-			break
+		data, err := json.MarshalIndent(env.RR, "", "  ")
+		if err != nil {
+			log.Fatalf("JSON Marshalling failed: %s", err)
 		}
-		for _, rr := range env.RR {
-			fmt.Fprintf(w, "%T\t%[1]s\n", rr)
-		}
+		fmt.Printf("%s\n",data)
+		// if len(env.RR) > 0 {
+		// 	fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
+		// }
+		// for _,result := range env.RR {
+		// 	fmt.Fprintf(w, "%T\t%[1]s\n", result)
+		// }
 	}
 
 	w.Flush()
-
-	fmt.Println("----------------------------------------------------------------")
 
 	if err != nil {
 		log.Fatal(err)
@@ -62,7 +72,7 @@ func GetDNSAXFR(domain string, server string) {
 }
 
 func main() {
-	//logrus.Out = os.Stdout
+
 	//Parse
 	parser := argparse.NewParser("print", "Prints provided string to stdout")
 	domain := parser.String("d", "domain", &argparse.Options{Required: true, Help: "Domain to scan"})
@@ -72,23 +82,16 @@ func main() {
 		fmt.Print(parser.Usage(err))
 	}
 
-	contextLogger := logrus.WithFields(logrus.Fields{
-		"domain":  *domain,
-		"example": "test",
-	})
-
-	contextLogger.Info("I'll be logged with common and other field")
+	// contextLogger := logrus.WithFields(logrus.Fields{
+	// 	"domain":  *domain,
+	// 	"example": "test",
+	// })
 
 	nameservers := GetDNSServers(*domain)
+	ips := GetDNSIps(nameservers)
 
-	for _, server := range nameservers {
-		ips, err := net.LookupIP(server)
-		if err != nil {
-			panic(err)
-		}
-		for _, ip := range ips {
-			contextLogger.Info("Trying to solve %s in %s",*domain,*domain,ip)
-			GetDNSAXFR(*domain, ip.String())
-		}
-	}
+	// Get ASXF opened zones
+	for _,ip := range ips {
+		GetDNSAXFR(*domain, ip)
+	} 
 }
