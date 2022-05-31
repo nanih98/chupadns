@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"github.com/akamensky/argparse"
 	"github.com/miekg/dns"
-	"encoding/json"
+	//"encoding/json"
 	//"github.com/sirupsen/logrus"
 )
 
@@ -51,17 +51,17 @@ func GetDNSAXFR(domain string, server string) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 1, 2, ' ', 0)
 
 	for env := range ch {
-		data, err := json.MarshalIndent(env.RR, "", "  ")
-		if err != nil {
-			log.Fatalf("JSON Marshalling failed: %s", err)
+		// data, err := json.MarshalIndent(env.RR, "", "  ")
+		// if err != nil {
+		// 	log.Fatalf("JSON Marshalling failed: %s", err)
+		// }
+		// fmt.Printf("%s\n",data)
+		if len(env.RR) > 0 {
+			fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
 		}
-		fmt.Printf("%s\n",data)
-		// if len(env.RR) > 0 {
-		// 	fmt.Fprintln(w, "Go type\tName\tTTL\tClass\tRR type\tetc")
-		// }
-		// for _,result := range env.RR {
-		// 	fmt.Fprintf(w, "%T\t%[1]s\n", result)
-		// }
+		for _,result := range env.RR {
+			fmt.Fprintf(w, "%T\t%[1]s\n", result)
+		}
 	}
 
 	w.Flush()
